@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Video Watermark Remover - Quitar Marca de Agua</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="header">
+      <div class="logo-wrapper">
+        <div class="logo-icon">🎬</div>
+        <div>
+          <h1>Video Watermark Remover</h1>
+          <p class="subtitle">Elimina logos y marcas de agua fijas con detección automática</p>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Step 1: Upload Section -->
+      <section id="uploadSection" class="card active">
+        <div class="card-header">
+          <span class="step-badge">1</span>
+          <h2>Selecciona tu video</h2>
+        </div>
+        <div class="upload-dropzone" id="dropzone">
+          <input type="file" id="videoInput" accept="video/mp4,video/quicktime,video/x-matroska,video/webm,video/avi" hidden>
+          <div class="dropzone-content">
+            <div class="drop-icon">📤</div>
+            <p class="drop-title">Arrastra tu video aquí o haz clic para buscar</p>
+            <p class="drop-hint">Compatible con MP4, MOV, MKV, WebM y AVI</p>
+            <button type="button" class="btn btn-primary" id="btnSelectFile">Seleccionar Archivo</button>
+          </div>
+        </div>
+        <div id="uploadProgress" class="progress-container hidden">
+          <p id="uploadStatusText">Subiendo video...</p>
+          <div class="progress-bar-bg">
+            <div id="uploadProgressBar" class="progress-bar-fill" style="width: 0%"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Step 2: Detection and Bounding Box Adjuster -->
+      <section id="editorSection" class="card hidden">
+        <div class="card-header space-between">
+          <div class="flex-row">
+            <span class="step-badge">2</span>
+            <div>
+              <h2>Ubicación de la Marca de Agua</h2>
+              <p class="section-desc">Detectamos la marca automáticamente. Puedes ajustar el recuadro si lo deseas.</p>
+            </div>
+          </div>
+          <button id="btnRedetect" class="btn btn-secondary">
+            <span class="btn-icon">⚡</span> Redetectar Marca
+          </button>
+        </div>
+
+        <!-- Video Info Pill & Detection Badge -->
+        <div class="meta-bar">
+          <div class="meta-item">
+            <span class="meta-label">Archivo:</span>
+            <span id="metaFilename" class="meta-value">video.mp4</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Resolución:</span>
+            <span id="metaRes" class="meta-value">1920x1080</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Duración:</span>
+            <span id="metaDuration" class="meta-value">00:30</span>
+          </div>
+          <div id="detectionBadge" class="status-badge badge-pending">
+            Buscando marca...
+          </div>
+        </div>
+
+        <!-- Canvas Editor Viewport -->
+        <div class="canvas-viewport" id="viewport">
+          <div class="canvas-wrapper" id="canvasWrapper">
+            <img id="previewImage" alt="Frame preview">
+            <canvas id="overlayCanvas"></canvas>
+          </div>
+          <div class="canvas-instructions">
+            <span>💡 Tip: Arrastra el recuadro verde o usa sus esquinas para cambiar el tamaño exacto.</span>
+          </div>
+        </div>
+
+        <!-- Quick Presets -->
+        <div class="presets-row">
+          <span class="presets-label">Atajos rápidos:</span>
+          <button type="button" class="preset-btn" data-preset="tr">Esquina Sup. Derecha</button>
+          <button type="button" class="preset-btn" data-preset="tl">Esquina Sup. Izquierda</button>
+          <button type="button" class="preset-btn" data-preset="br">Esquina Inf. Derecha</button>
+          <button type="button" class="preset-btn" data-preset="bl">Esquina Inf. Izquierda</button>
+        </div>
+
+        <!-- Step 3: Removal Settings -->
+        <div class="settings-box">
+          <label class="settings-title">Método de eliminación:</label>
+          <div class="method-options">
+            <label class="method-card active">
+              <input type="radio" name="method" value="delogo" checked>
+              <div class="method-info">
+                <strong>Delogo Inteligente (Recomendado)</strong>
+                <p>Reconstruye la zona interpolando los bordes circundantes.</p>
+              </div>
+            </label>
+            <label class="method-card">
+              <input type="radio" name="method" value="blur">
+              <div class="method-info">
+                <strong>Desenfoque Suave (Blur)</strong>
+                <p>Aplica un filtro borroso estético sobre la marca.</p>
+              </div>
+            </label>
+            <label class="method-card">
+              <input type="radio" name="method" value="pixelate">
+              <div class="method-info">
+                <strong>Pixelado</strong>
+                <p>Cubre el logo con un mosaico de píxeles.</p>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- Process Action Button -->
+        <div class="action-footer">
+          <button type="button" id="btnChangeVideo" class="btn btn-outline">Cambiar video</button>
+          <button type="button" id="btnProcess" class="btn btn-cta">
+            <span class="btn-icon">✨</span> Borrar Marca de Agua y Guardar Video
+          </button>
+        </div>
+      </section>
+
+      <!-- Step 3: Processing & Results Section -->
+      <section id="resultSection" class="card hidden">
+        <div class="card-header">
+          <span class="step-badge">3</span>
+          <h2>Resultado</h2>
+        </div>
+
+        <!-- Processing State -->
+        <div id="processingState" class="state-container">
+          <div class="spinner-ring"></div>
+          <h3 id="processStatusTitle">Procesando tu video...</h3>
+          <p id="processStatusDesc">Eliminando la marca de agua y preservando el audio original.</p>
+          <div class="progress-bar-bg" style="max-width: 500px; margin: 20px auto;">
+            <div id="processProgressBar" class="progress-bar-fill" style="width: 0%"></div>
+          </div>
+          <span id="processPercentText" class="percent-label">0%</span>
+        </div>
+
+        <!-- Completed State -->
+        <div id="completedState" class="state-container hidden">
+          <div class="success-icon">🎉</div>
+          <h3>¡Tu video está listo sin marca de agua!</h3>
+          <p>La marca ha sido eliminada conservando la resolución y sincronización original.</p>
+
+          <div class="video-preview-wrapper">
+            <video id="cleanedVideoPlayer" controls playsinline></video>
+          </div>
+
+          <div class="action-buttons-group">
+            <a id="btnDownload" class="btn btn-cta" download>
+              <span class="btn-icon">📥</span> Descargar Video Limpio
+            </a>
+            <button type="button" id="btnProcessAnother" class="btn btn-secondary">
+              Procesar otro video
+            </button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

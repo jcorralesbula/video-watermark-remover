@@ -225,7 +225,7 @@ app.get('/api/download/:filename', (req, res) => {
   res.download(filePath);
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`====================================================`);
   console.log(`  Video Watermark Remover está corriendo en:`);
   console.log(`  http://localhost:${PORT}`);
